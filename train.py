@@ -2,6 +2,8 @@ import torch
 from model import LeNet
 from dataset import load_data
 import torch.nn.functional as F
+import torch.nn as nn
+from utils import hinge_loss
 
 def train(model, device, train_loader, optimizer, epoch):
     model.train()
@@ -9,7 +11,17 @@ def train(model, device, train_loader, optimizer, epoch):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
         output = model(data)
-        loss = F.cross_entropy(output, target)
+
+        if (batch_idx % 4 == 0):
+            loss = F.cross_entropy(output, target)
+        elif(batch_idx % 4 == 1):
+            loss = F.mse_loss(output, F.one_hot(target, num_classes=10).float())
+        elif(batch_idx % 4 == 2):
+            output_log_softmax = F.log_softmax(output, dim=1)
+            loss = F.nll_loss(output_log_softmax, target)
+        elif(batch_idx % 4 == 3):
+            loss = hinge_loss(output, target)
+
         loss.backward()
         optimizer.step()
         if batch_idx % 10 == 0:
